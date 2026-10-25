@@ -1,0 +1,313 @@
+#lang eopl
+
+;;;;******************************************************************************************************************************************************************************************************************************************
+
+;;;; INTERPRETADOR TALLER 3 V4
+
+
+
+;;; DEFINICION BNF DEL LENGUAJE DADA EN EL TALLER
+
+
+;<programa> :=  <expresion>
+
+;               un-programa (exp)
+
+;<expresion> := <numero>
+
+;              numero-lit (num)
+
+;            := "\""<texto> "\""
+
+;               texto-lit (txt)
+
+;            := <identificador>
+
+ ;              var-exp (id)
+
+  ;           := (<expresion> <primitiva-binaria> <expresion>)
+
+   ;            primapp-bin-exp (exp1 prim-binaria exp2)
+
+    ;          := <primitiva-unaria> (<expresion>)
+
+     ;          primapp-un-exp (prim-unaria exp)
+
+;<primitiva-binaria> :=  + (primitiva-suma)
+
+; :=  ~ (primitiva-resta)      Observe que al tratarse de notación infija, resta la trabajaremos con la virgulilla para evitar confusión entre números negativos y la operación resta. Ejemplo: (4 ~ 5) -> -1  y (4 ~ -5) ->9 
+
+;:=  / (primitiva-div)
+
+;  :=  * (primitiva-multi)
+
+;  :=  concat (primitiva-concat)
+
+;  := > (primitiva-mayor)
+
+;  := < (primitiva-menor)
+
+;  := >= (primitiva-mayor-igual)
+
+; := <= (primitiva-menor-igual)
+
+; := != (primitiva-diferente)
+
+; := == (primitiva-comparador-igual)
+
+;<primitiva-unaria>:=  longitud (primitiva-longitud)
+
+;           :=  add1 (primitiva-add1)
+
+;            :=  sub1 (primitiva-sub1)
+
+;            := neg (primitiva-negacion-booleana)
+
+
+
+;Especificacion Lexica
+
+(define scaner-interpreter
+  '((white-sp
+    (whitespace)skip)
+  (comment
+   ("%"(arbno(not #\newline)))skip)
+   (texto
+   (letter (arbno (or letter digit "_"))) string)
+   (identificador
+    ("@" letter (arbno (or letter digit "_")))symbol)
+   (numero
+    (digit (arbno digit))number)
+   (numero
+    ("-" digit (arbno digit))number)
+   (numero
+    (digit (arbno digit) "." digit (arbno digit)) number)
+   (numero
+    ("-" digit (arbno digit) "." digit (arbno digit))number
+  )))
+
+
+;Especificacion sintetica (gramatica)
+
+(define grammar-simple-interpreter
+  '((programa (expresion) un-programa)
+    (expresion(numero)numero-lit)
+    (expresion("\"" texto "\"")texto-lit)
+    (expresion(identificador) var-exp)
+    
+    (expresion
+     ("(" expresion primitiva-binaria expresion ")")
+     primapp-bin-exp)
+    (expresion
+     (primitiva-unaria "(" expresion ")")
+     primapp-un-exp)
+    
+    (primitiva-binaria ("+") primitiva-suma)
+    (primitiva-binaria ("~") primitiva-resta)
+    (primitiva-binaria ("/") primitiva-div)
+    (primitiva-binaria ("*") primitiva-multi)
+    (primitiva-binaria ("concat") primitiva-concat)
+    (primitiva-binaria (">") primitiva-mayor)
+    (primitiva-binaria ("<") primitiva-menor)
+    (primitiva-binaria (">=") primitiva-mayor-igual)
+    (primitiva-binaria ("<=") primitiva-menor-igual)
+    (primitiva-binaria ("!=") primitiva-diferente)
+    (primitiva-binaria ("==") primitiva-comparador-igual)
+    (primitiva-unaria ("long") primitiva-longitud)
+    (primitiva-unaria ("add1") primitiva-add1)
+    (primitiva-unaria ("sub1") primitiva-sub1)
+    (primitiva-unaria ("neg") primitiva-neg-bool)
+       )
+      )
+     
+    
+
+
+;Tipos de datos para la sintaxis abstracta de la gramática
+
+ ;Construidos automáticamente:
+
+(sllgen:make-define-datatypes scaner-interpreter grammar-simple-interpreter)
+
+(define show-the-datatypes
+  (lambda () (sllgen:list-define-datatypes scaner-interpreter grammar-simple-interpreter)))
+;Parser, Scanner, Interfaz
+
+(define scan&parse
+  (sllgen:make-string-parser scaner-interpreter grammar-simple-interpreter))
+
+(define just-scan
+  (sllgen:make-string-scanner  scaner-interpreter grammar-simple-interpreter))
+
+(define interpretador
+  (sllgen:make-rep-loop "--> "
+    (lambda (pgm) (eval-program  pgm))
+    (sllgen:make-stream-parser 
+      scaner-interpreter
+      grammar-simple-interpreter)))
+
+
+
+
+
+;el interprete
+
+
+(define eval-program
+  (lambda(pgm)
+    (cases programa pgm
+      (un-programa(body)
+                (eval-expression body(init-env))))))
+
+
+
+;Ambiente inicial
+
+(define init-env
+  (lambda ()
+    (extend-env
+     '(@a @b @c @d @e)
+     (list 1 2 3 "hola" "FLP")
+     (empty-env))))
+
+
+;enval-expression: <expresion><enviroment> -> valor
+(define eval-expression
+  (lambda (exp env)
+    (cases expresion exp
+      (numero-lit (num) num)
+      (texto-lit (txt) txt)
+      (var-exp (id) (find-var env id))
+      (primapp-bin-exp (exp1 prim-binaria exp2)
+                       (let ((arg1 (eval-expression exp1 env))
+                             (arg2 (eval-expression exp2 env)))
+                         (apply-primitive-bin prim-binaria arg1 arg2)))
+      (primapp-un-exp (prim-unaria exp)
+                      (let ((arg (eval-expression exp env)))
+                        (apply-primitive-un prim-unaria arg))))))
+
+
+
+;apply-primitive-bin: <primitiva-binaria>valor valor -> valor
+
+(define apply-primitive-bin
+  (lambda (prim arg1 arg2)
+    (cases primitiva-binaria prim
+      (primitiva-suma ()(+ arg1 arg2))
+      (primitiva-resta ()(- arg1 arg2))
+      (primitiva-div ()(/ arg1 arg2))
+      (primitiva-multi ()(* arg1 arg2))
+      (primitiva-concat ()(string-append arg1 arg2))
+      (primitiva-mayor ()(> arg1 arg2))
+      (primitiva-menor ()(< arg1 arg2))
+      (primitiva-mayor-igual ()(>= arg1 arg2))
+      (primitiva-menor-igual ()(<= arg1 arg2))
+      (primitiva-diferente ()(not(= arg1 arg2)))
+      (primitiva-comparador-igual ()(= arg1 arg2)))))
+
+
+;apply primitive unitario
+
+(define apply-primitive-un
+  (lambda(prim arg)
+        (cases primitiva-unaria prim
+          (primitiva-longitud () (string-length arg))
+          (primitiva-add1 () (+ arg 1))
+          (primitiva-sub1 () (- arg 1))
+          (primitiva-neg-bool () (not arg))
+           )))
+
+
+;Datatype procval
+
+(define-datatype procval procval?
+  (closure
+   (ids (list-of symbol?))
+   (body expresion?)
+    (env environment?)))
+
+
+;Apply Procedure
+
+(define apply-procedure
+  (lambda (proc args)
+    (cases procval proc
+      (closure (ids body env)
+               (eval-expression body (extend-env ids args env))))))
+
+
+
+
+;Datatype environment
+(define-datatype environment environment?
+  (empty-env-record)
+  (extended-env-record (syms(list-of symbol?))
+                       (vals(list-of scheme-value?))
+                       (env environment?)))
+(define scheme-value? (lambda (v) #t))
+
+
+
+;empty-env
+
+(define empty-env
+  (lambda ()
+    (empty-env-record)))
+
+
+;extend-env
+(define extend-env
+  (lambda(syms vals env)
+    (extended-env-record syms vals env)))
+
+
+;apply-env
+(define apply-env
+  (lambda (env sym)
+    (cases environment env
+      (empty-env-record ()
+                        (eopl:error 'apply-env "No binding for ~s" sym))
+      (extended-env-record (syms vals env)
+                           (let ((pos (list-find-position sym syms)))
+                             (if (number? pos)
+                                 (list-ref vals pos)
+                                 (apply-env env sym)))))))
+
+
+
+(define find-var
+  (lambda(sym env)
+    (cases environment env
+      (empty-env-record ()
+                         "Error, variable does not exist")
+      (extended-env-record (syms vals env)
+                           (let((pos (list-find-position sym syms)))
+                             (if (number? pos)
+                                 (list-ref vals pos)
+                                 (find-var sym env)))))))
+                             
+                         
+
+                      
+
+
+
+;list-find-position
+(define list-find-position
+  (lambda (sym los)
+    (list-index(lambda (syml) (eqv? syml sym))los)))
+
+;list index
+
+(define list-index
+  (lambda(pred ls)
+    (cond
+      ((null? ls )#f)
+      ((pred (car ls))0)
+      (else (let((list-index-r(list-index pred (cdr ls))))
+              (if (number? list-index-r)
+                  (+ list-index-r 1)#f))))))
+
+                    
+      
+      
