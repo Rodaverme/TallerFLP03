@@ -101,6 +101,10 @@
     (expresion
      (primitiva-unaria "(" expresion ")")
      primapp-un-exp)
+
+    (expresion
+     ("Si" expresion "{" expresion "}" "sino" "{" expresion "}" )
+     condicional-exp)
     
     (primitiva-binaria ("+") primitiva-suma)
     (primitiva-binaria ("~") primitiva-resta)
@@ -113,7 +117,7 @@
     (primitiva-binaria ("<=") primitiva-menor-igual)
     (primitiva-binaria ("!=") primitiva-diferente)
     (primitiva-binaria ("==") primitiva-comparador-igual)
-    (primitiva-unaria ("long") primitiva-longitud)
+    (primitiva-unaria ("longitud") primitiva-longitud)
     (primitiva-unaria ("add1") primitiva-add1)
     (primitiva-unaria ("sub1") primitiva-sub1)
     (primitiva-unaria ("neg") primitiva-neg-bool)
@@ -170,6 +174,15 @@
      (list 1 2 3 "hola" "FLP")
      (empty-env))))
 
+;Determina si un numero representa verdadero
+(define valor-verdad?
+  (lambda (num)
+    (not(zero? num))))
+
+; #t -> 1, #f -> 0
+(define transformar-bool
+  (lambda (bool)
+    (if bool 1 0)))
 
 ;enval-expression: <expresion><enviroment> -> valor
 (define eval-expression
@@ -184,7 +197,11 @@
                          (apply-primitive-bin prim-binaria arg1 arg2)))
       (primapp-un-exp (prim-unaria exp)
                       (let ((arg (eval-expression exp env)))
-                        (apply-primitive-un prim-unaria arg))))))
+                        (apply-primitive-un prim-unaria arg)))
+      (condicional-exp (test-exp true-exp false-exp)
+                       (if (valor-verdad? (eval-expression test-exp env))
+                               (eval-expression true-exp env)
+                               (eval-expression false-exp env))))))
 
 
 
@@ -198,12 +215,12 @@
       (primitiva-div ()(/ arg1 arg2))
       (primitiva-multi ()(* arg1 arg2))
       (primitiva-concat ()(string-append arg1 arg2))
-      (primitiva-mayor ()(> arg1 arg2))
-      (primitiva-menor ()(< arg1 arg2))
-      (primitiva-mayor-igual ()(>= arg1 arg2))
-      (primitiva-menor-igual ()(<= arg1 arg2))
-      (primitiva-diferente ()(not(= arg1 arg2)))
-      (primitiva-comparador-igual ()(= arg1 arg2)))))
+      (primitiva-mayor ()(transformar-bool (> arg1 arg2)))
+      (primitiva-menor ()(transformar-bool (< arg1 arg2)))
+      (primitiva-mayor-igual ()(transformar-bool (>= arg1 arg2)))
+      (primitiva-menor-igual ()(transformar-bool (<= arg1 arg2)))
+      (primitiva-diferente ()(transformar-bool (not(= arg1 arg2))))
+      (primitiva-comparador-igual ()(transformar-bool (= arg1 arg2))))))
 
 
 ;apply primitive unitario
@@ -214,8 +231,8 @@
           (primitiva-longitud () (string-length arg))
           (primitiva-add1 () (+ arg 1))
           (primitiva-sub1 () (- arg 1))
-          (primitiva-neg-bool () (not arg))
-           )))
+          (primitiva-neg-bool () (transformar-bool (not (valor-verdad? arg))))
+          )))
 
 
 ;Datatype procval
