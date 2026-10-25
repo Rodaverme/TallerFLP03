@@ -1,5 +1,19 @@
 #lang eopl
 
+; -----------------------------------------  Integrantes --------------------------------------------------
+
+;; Jean Carlo Castañeda Trujillo - 202610106
+;; Andres Mauricio Muñoz Garcia - 2026104
+;; Jean Carlo Sanchez Parra - 202610123
+;; Ronald David Vera Meneses - 202610127
+
+; -----------------------------------------  Declaración IA ----------------------------------------------
+
+;; Se hizo uso de la IA para reforzar conceptos teoricos de los ejercicios
+;; también para realizar aclaraciones sobre el enunciado y generacion de ejemplos
+
+; -----------------------------------------  Ejercicios --------------------------------------------------
+
 ;;;;******************************************************************************************************************************************************************************************************************************************
 
 ;;;; INTERPRETADOR TALLER 3 V4
