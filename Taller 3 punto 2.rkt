@@ -105,6 +105,17 @@
     (expresion
      ("Si" expresion "{" expresion "}" "sino" "{" expresion "}" )
      condicional-exp)
+
+    ;;Declaracion de variables locales
+    (expresion
+     ("declarar" "(" (arbno identificador "=" expresion ";") ")" "{" expresion "}")
+     variableLocal-exp)
+    
+    ;;Creacion de procedimientos
+    (expresion
+     ("procedimiento" "(" (separated-list identificador ",") ")" "{" expresion "}")
+     procedimiento-exp)
+
     
     (primitiva-binaria ("+") primitiva-suma)
     (primitiva-binaria ("~") primitiva-resta)
@@ -201,8 +212,16 @@
       (condicional-exp (test-exp true-exp false-exp)
                        (if (valor-verdad? (eval-expression test-exp env))
                                (eval-expression true-exp env)
-                               (eval-expression false-exp env))))))
+                               (eval-expression false-exp env)))
 
+      ;; Evaluacion de variables locales
+      (variableLocal-exp (ids exps cuerpo)
+                         (let ((vals (map (lambda (e) (eval-expression e env)) exps)))
+                           (eval-expression cuerpo (extend-env ids vals env))))
+
+      ;; Evaluacion de procedimientos
+      (procedimiento-exp (ids cuerpo)
+                         (closure ids cuerpo env)))))
 
 
 ;apply-primitive-bin: <primitiva-binaria>valor valor -> valor
