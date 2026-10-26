@@ -239,8 +239,15 @@
 
       ;; Evaluacion de variables locales
       (variableLocal-exp (ids exps cuerpo)
-                         (let ((vals (map (lambda (e) (eval-expression e env)) exps)))
-                           (eval-expression cuerpo (extend-env ids vals env))))
+                         (let loop ((ids-rest ids)
+                                    (exps-rest exps)
+                                    (current-env env))
+                           (if (null? ids-rest)
+                               (eval-expression cuerpo current-env)
+                               (let ((val (eval-expression (car exps-rest) current-env)))
+                                 (loop (cdr ids-rest)
+                                       (cdr exps-rest)
+                                       (extend-env (list (car ids-rest)) (list val) current-env))))))
 
       ;; Evaluacion de procedimientos
       (procedimiento-exp (ids cuerpo)
@@ -389,6 +396,27 @@
                   (+ list-index-r 1)#f))))))
 
 
+;Punto A @sumarDigitos  y evaluar @sumarDigitos(147) finEval
+
+(eval-program
+ (scan&parse
+  "declarar-rec @mod10(@n) = { Si (@n < 10) { @n } sino { evaluar @mod10((@n ~ 10)) finEval } } en { declarar-rec @div10(@n) = { Si (@n < 10) { 0 } sino { (1 + evaluar @div10((@n ~ 10)) finEval) } } en { declarar-rec @sumarDigitos(@n) = { Si (@n < 10) { @n } sino { (evaluar @mod10(@n) finEval + evaluar @sumarDigitos(evaluar @div10(@n) finEval) finEval) } } en { evaluar @sumarDigitos(147) finEval } } }"))
+;(interpretador)
+;--> declarar-rec @mod10(@n) = {
+;Si (@n < 10)
+;{ @n }
+;sino { evaluar @mod10((@n ~ 10)) finEval } }
+;en {
+;declarar-rec @div10(@n) =
+;{ Si (@n < 10) { 0 }
+;sino
+;{ (1 + evaluar @div10((@n ~ 10)) finEval) } }
+;en { declarar-rec @sumarDigitos(@n) =
+;{ Si (@n < 10) { @n }
+;sino {
+;(evaluar @mod10(@n) finEval + evaluar @sumarDigitos(evaluar @div10(@n) finEval) finEval) } } en { evaluar @sumarDigitos(147) finEval } } }
+;12
+
 
 
 ;PUNTO B @SumaNaturales
@@ -430,30 +458,6 @@
 ;15
 
 
-
-
-
-
-;Punto A @sumarDigitos  y evaluar @sumarDigitos(147) finEval
-
-(eval-program
- (scan&parse
-  "declarar-rec @mod10(@n) = { Si (@n < 10) { @n } sino { evaluar @mod10((@n ~ 10)) finEval } } en { declarar-rec @div10(@n) = { Si (@n < 10) { 0 } sino { (1 + evaluar @div10((@n ~ 10)) finEval) } } en { declarar-rec @sumarDigitos(@n) = { Si (@n < 10) { @n } sino { (evaluar @mod10(@n) finEval + evaluar @sumarDigitos(evaluar @div10(@n) finEval) finEval) } } en { evaluar @sumarDigitos(147) finEval } } }"))
-;(interpretador)
-;--> declarar-rec @mod10(@n) = {
-;Si (@n < 10)
-;{ @n }
-;sino { evaluar @mod10((@n ~ 10)) finEval } }
-;en {
-;declarar-rec @div10(@n) =
-;{ Si (@n < 10) { 0 }
-;sino
-;{ (1 + evaluar @div10((@n ~ 10)) finEval) } }
-;en { declarar-rec @sumarDigitos(@n) =
-;{ Si (@n < 10) { @n }
-;sino {
-;(evaluar @mod10(@n) finEval + evaluar @sumarDigitos(evaluar @div10(@n) finEval) finEval) } } en { evaluar @sumarDigitos(147) finEval } } }
-;12
 
 ;Punto C @multiplicar(a,b)
 (eval-program
@@ -498,3 +502,35 @@
    } en {
      evaluar @sumaParesRango(2, 7) finEval
    }"))
+
+
+; Punto E - Decorador de Integrantes
+
+(eval-program
+ (scan&parse
+  "declarar (
+     @integrantes = procedimiento () { \"Jean_Andres_Jean_Ronald\" };
+     @saludar = procedimiento (@f) {
+                  procedimiento () {
+                    (\"Hola_\" concat evaluar @f () finEval)
+                  }
+                };
+     @decorate = evaluar @saludar (@integrantes) finEval;
+   ) {
+     evaluar @decorate () finEval
+   }"))
+
+
+; (interpretador)
+;declarar (
+;  @integrantes = procedimiento () { "Jean_Andres_Jean_Ronald" };
+;  @saludar = procedimiento (@f) {
+;               procedimiento () {
+;                 ("Hola_" concat evaluar @f () finEval)
+;               }
+;             };
+;  @decorate = evaluar @saludar (@integrantes) finEval;
+;) {
+;  evaluar @decorate () finEval
+;}
+
