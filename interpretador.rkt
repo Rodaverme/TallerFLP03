@@ -490,12 +490,10 @@
        Si (@a > @b) {
          0
        } sino {
-         declarar (@par = evaluar @esPar(@a) finEval;) {
-           Si (@par == 1) {
-             (@a + evaluar @sumaParesRango((@a + 1), @b) finEval)
-           } sino {
-             evaluar @sumaParesRango((@a + 1), @b) finEval
-           }
+         Si (evaluar @esPar(@a) finEval == 1) {
+           (@a + evaluar @sumaParesRango((@a + 1), @b) finEval)
+         } sino {
+           evaluar @sumaParesRango((@a + 1), @b) finEval
          }
        }
      }
