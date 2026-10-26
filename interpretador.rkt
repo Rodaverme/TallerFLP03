@@ -388,6 +388,113 @@
               (if (number? list-index-r)
                   (+ list-index-r 1)#f))))))
 
-                    
-      
-      
+
+
+
+;PUNTO B @SumaNaturales
+
+;Prueba recursiva con el 5
+  (eval-program
+ (scan&parse
+  "declarar-rec @sumaNaturales(@n) = { Si (@n == 0) { 0 } sino { (@n + evaluar @sumaNaturales((@n ~ 1)) finEval) } } en { evaluar @sumaNaturales(5) finEval }"))
+
+;> (interpretador)
+;--> declarar-rec @sumaNaturales(@n) = {
+;Si (@n == 0)
+;{ 0
+;} sino {
+;(@n + evaluar @sumaNaturales((@n ~ 1)) finEval) }
+;} en {
+;evaluar @sumaNaturales(5) finEval }
+;)
+;)
+;15
+
+
+
+
+  (eval-program
+ (scan&parse
+  "declarar-rec @sumaNaturales(@n) = { Si (@n == 0) { 0 } sino { (@n + evaluar @sumaNaturales((@n ~ 1)) finEval) } } en { evaluar @sumaNaturales(10) finEval }"))
+
+;> (interpretador)
+;--> declarar-rec @sumaNaturales(@n) = {
+;Si (@n == 0)
+;{ 0
+;} sino {
+;(@n + evaluar @sumaNaturales((@n ~ 1)) finEval) }
+;} en {
+;evaluar @sumaNaturales(10) finEval }
+;)
+;)
+;15
+
+
+
+
+
+
+;Punto A @sumarDigitos  y evaluar @sumarDigitos(147) finEval
+
+(eval-program
+ (scan&parse
+  "declarar-rec @mod10(@n) = { Si (@n < 10) { @n } sino { evaluar @mod10((@n ~ 10)) finEval } } en { declarar-rec @div10(@n) = { Si (@n < 10) { 0 } sino { (1 + evaluar @div10((@n ~ 10)) finEval) } } en { declarar-rec @sumarDigitos(@n) = { Si (@n < 10) { @n } sino { (evaluar @mod10(@n) finEval + evaluar @sumarDigitos(evaluar @div10(@n) finEval) finEval) } } en { evaluar @sumarDigitos(147) finEval } } }"))
+;(interpretador)
+;--> declarar-rec @mod10(@n) = {
+;Si (@n < 10)
+;{ @n }
+;sino { evaluar @mod10((@n ~ 10)) finEval } }
+;en {
+;declarar-rec @div10(@n) =
+;{ Si (@n < 10) { 0 }
+;sino
+;{ (1 + evaluar @div10((@n ~ 10)) finEval) } }
+;en { declarar-rec @sumarDigitos(@n) =
+;{ Si (@n < 10) { @n }
+;sino {
+;(evaluar @mod10(@n) finEval + evaluar @sumarDigitos(evaluar @div10(@n) finEval) finEval) } } en { evaluar @sumarDigitos(147) finEval } } }
+;12
+
+;Punto C @multiplicar(a,b)
+(eval-program
+ (scan&parse
+  "declarar-rec @multiplicar(@a, @b) = {
+     Si (@a == 0) {
+       0
+     } sino {
+       (@b + evaluar @multiplicar( (@a ~ 1), @b ) finEval)
+     }
+   } en {
+     evaluar @multiplicar(4,3) finEval
+   }"))
+
+;Punto D @sumaParesRango(a,b)
+(eval-program
+ (scan&parse
+  "declarar-rec @sumaParesRango(@a, @b) = {
+     declarar-rec @esPar(@n) = {
+       Si (@n == 0) {
+         1
+       } sino {
+         Si (@n == 1) {
+           0
+         } sino {
+           evaluar @esPar((@n ~ 2)) finEval
+         }
+       }
+     } en {
+       Si (@a > @b) {
+         0
+       } sino {
+         declarar (@par = evaluar @esPar(@a) finEval;) {
+           Si (@par == 1) {
+             (@a + evaluar @sumaParesRango((@a + 1), @b) finEval)
+           } sino {
+             evaluar @sumaParesRango((@a + 1), @b) finEval
+           }
+         }
+       }
+     }
+   } en {
+     evaluar @sumaParesRango(2, 7) finEval
+   }"))
