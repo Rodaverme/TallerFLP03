@@ -12,6 +12,10 @@
 ;; Se hizo uso de la IA para reforzar conceptos teoricos de los ejercicios
 ;; también para realizar aclaraciones sobre el enunciado.
 
+; -----------------------------------------  Enlace REpositorio --------------------------------------------------
+
+; https://github.com/Rodaverme/TallerFLP03.git
+
 ; -----------------------------------------  Ejercicios --------------------------------------------------
 
 ;;;;******************************************************************************************************************************************************************************************************************************************
@@ -532,3 +536,31 @@
 ;  evaluar @decorate () finEval
 ;}
 
+(eval-program
+ (scan&parse
+  "declarar (
+     @integrantes = procedimiento () { \"Robinson_y_Sara_\" };
+     @saludar = procedimiento (@f) {
+                  procedimiento () {
+                    (\"Hola_\" concat evaluar @f () finEval)
+                  }
+                };
+     @decorate = evaluar @saludar (@integrantes) finEval;
+   ) {
+     evaluar @decorate (\"ProfesoresFLP\") finEval
+   }"))
+
+
+; (interpretador)
+;declarar (
+;    @integrantes = procedimiento () { \"Robinson_y_Sara_\" };
+;    @saludar = procedimiento (@f) {
+;                 procedimiento () {
+;                   (\"Hola_\" concat evaluar @f () finEval)
+;                 }
+;               };
+;    @decorate = evaluar @saludar (@integrantes) finEval;
+;  ) {
+;    evaluar @decorate (\"ProfesoresFLP\") finEval
+;  }
+;}
