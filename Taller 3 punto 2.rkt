@@ -3,14 +3,14 @@
 ; -----------------------------------------  Integrantes --------------------------------------------------
 
 ;; Jean Carlo Castañeda Trujillo - 202610106
-;; Andres Mauricio Muñoz Garcia - 2026104
+;; Andres Mauricio Muñoz Garcia - 202610104
 ;; Jean Carlo Sanchez Parra - 202610123
 ;; Ronald David Vera Meneses - 202610127
 
 ; -----------------------------------------  Declaración IA ----------------------------------------------
 
 ;; Se hizo uso de la IA para reforzar conceptos teoricos de los ejercicios
-;; también para realizar aclaraciones sobre el enunciado y generacion de ejemplos
+;; también para realizar aclaraciones sobre el enunciado.
 
 ; -----------------------------------------  Ejercicios --------------------------------------------------
 
@@ -130,6 +130,15 @@
      ("procedimiento" "(" (separated-list identificador ",") ")" "{" expresion "}")
      procedimiento-exp)
 
+    ;; Evaluación de procedimientos
+    (expresion
+     ("evaluar" expresion "(" (separated-list expresion ",") ")" "finEval") app-exp)
+
+    ;;Llamados recursivos
+    (expresion
+     ("declarar-rec" identificador "(" (separated-list identificador ",") ")" "=" "{"
+                     expresion "}" "en" "{" expresion "}") rec-exp)
+
     
     (primitiva-binaria ("+") primitiva-suma)
     (primitiva-binaria ("~") primitiva-resta)
@@ -235,7 +244,15 @@
 
       ;; Evaluacion de procedimientos
       (procedimiento-exp (ids cuerpo)
-                         (closure ids cuerpo env)))))
+                         (closure ids cuerpo env))
+      (app-exp (exp exps)
+               (let ((proc (eval-expression exp env))
+                     (args (map (lambda (e) (eval-expression e env)) exps)))
+                 (apply-procedure proc args)))
+      
+      (rec-exp (proc-name ids body-proc cuerpo-principal)
+               (eval-expression cuerpo-principal
+                                (recursively-extended-env-record proc-name ids body-proc env))))))
 
 
 ;apply-primitive-bin: <primitiva-binaria>valor valor -> valor
@@ -293,7 +310,12 @@
   (empty-env-record)
   (extended-env-record (syms(list-of symbol?))
                        (vals(list-of scheme-value?))
-                       (env environment?)))
+                       (env environment?))
+  (recursively-extended-env-record
+   (proc-name symbol?)
+   (ids (list-of symbol?))
+   (body expresion?)
+   (old-env environment?)))
 (define scheme-value? (lambda (v) #t))
 
 
@@ -321,7 +343,11 @@
                            (let ((pos (list-find-position sym syms)))
                              (if (number? pos)
                                  (list-ref vals pos)
-                                 (apply-env env sym)))))))
+                                 (apply-env env sym))))
+      (recursively-extended-env-record (proc-name ids body old-env)
+                                       (if (eqv? sym proc-name)
+                                           (closure ids body env)
+                                           (find-var sym old-env))))))
 
 
 
@@ -334,7 +360,11 @@
                            (let((pos (list-find-position sym syms)))
                              (if (number? pos)
                                  (list-ref vals pos)
-                                 (find-var sym env)))))))
+                                 (find-var sym env))))
+      (recursively-extended-env-record (proc-name ids body old-env)
+                                       (if (eqv? sym proc-name)
+                                           (closure ids body env)
+                                           (find-var sym old-env))))))
                              
                          
 
